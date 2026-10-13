@@ -1,0 +1,11 @@
+warning: Cargo.toml: unused manifest key: workspace.package.build
+warning: Cargo.toml: unused manifest key: workspace.package.name
+warning: workspace (manifest) generated 2 warnings
+   Compiling vec v0.1.0 (/home/patman101/local/src/repos/rust/collections/vec)
+    Checking btree v0.1.0 (/home/patman101/local/src/repos/rust/collections/btree)
+    Checking list v0.1.0 (/home/patman101/local/src/repos/rust/collections/list)
+error: could not compile `list` (lib) due to 206 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `btree` (lib) due to 478 previous errors; 32 warnings emitted
+error: could not compile `list` (lib test) due to 326 previous errors
+error: could not compile `btree` (lib test) due to 484 previous errors; 32 warnings emitted

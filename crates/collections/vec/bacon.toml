@@ -1,0 +1,54 @@
+# bacon.toml
+
+# The default job that runs when you just type `bacon` in the terminal.
+# 'check' is the fastest, making it the best default.
+default_job = "check"
+
+# -----------------------------------------------------------------------------
+# Jobs
+# -----------------------------------------------------------------------------
+
+# The standard check job (very fast, just checks if code compiles)
+[jobs.check]
+command = ["cargo", "check", "--color", "always"]
+need_stdout = false
+
+# Checks tests, examples, and benchmarks as well
+[jobs.check-all]
+command = ["cargo", "check", "--all-targets", "--color", "always"]
+need_stdout = false
+
+# Runs clippy for linting
+[jobs.clippy]
+command = ["cargo", "clippy", "--all-targets", "--color", "always"]
+need_stdout = false
+
+# Runs your test suite
+[jobs.test]
+command = ["cargo", "test", "--color", "always"]
+need_stdout = true
+
+# (Mainly for Binary Crates) Runs the executable
+[jobs.run]
+command = ["cargo", "run", "--color", "always"]
+need_stdout = true
+allow_warnings = true
+background = false # Keeps the app in the foreground so you can interact with it
+
+# Example of a custom job: Building documentation
+[jobs.doc]
+command = ["cargo", "doc", "--no-deps", "--color", "always"]
+need_stdout = false
+
+# -----------------------------------------------------------------------------
+# Keybindings
+# -----------------------------------------------------------------------------
+# These allow you to switch what bacon is doing instantly by pressing a single
+# key while it is running in your terminal.
+
+[keybindings]
+c = "job:clippy"
+t = "job:test"
+r = "job:run"
+d = "job:doc"
+a = "job:check-all"
