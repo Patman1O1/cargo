@@ -1,5 +1,10 @@
 // ── Aliases ─────────────────────────────────────────────────────────────────
 use core::{
+    cmp::{
+        Ordering,
+        PartialOrd,
+        PartialEq
+    },
     default::Default,
     fmt::Debug,
     mem::transmute,
@@ -46,6 +51,7 @@ impl Cap {
     }
 }
 
+// ── `Default for Cap` Implementation ────────────────────────────────────────
 impl Default for Cap {
     #[inline]
     fn default() -> Cap {
@@ -54,7 +60,27 @@ impl Default for Cap {
     }
 }
 
+// ── `PartialEq for Cap` Implementation ──────────────────────────────────────
 impl PartialEq for Cap {
     #[inline]
     fn eq(&self, rhs: &Cap) -> bool { self.as_inner() == rhs.as_inner() }
+}
+
+// ── `Eq for Cap` Implementation ─────────────────────────────────────────────
+impl Eq for Cap {}
+
+// ── `PartialOrd for Cap` Implementation ─────────────────────────────────────
+impl PartialOrd for Cap {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+// ── `Ord for Cap` Implementation ────────────────────────────────────────────
+impl Ord for Cap {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.as_inner().cmp(&other.as_inner())
+    }
 }
