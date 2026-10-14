@@ -9,7 +9,7 @@ use core::{
     fmt::{
         self,
         Debug
-    }
+    },
     hash::{
         Hash,
         Hasher
@@ -39,7 +39,7 @@ impl Cap {
     #[inline]
     pub(super) fn new(val: usize) -> Option<Self> {
        if val <= Self::MAX {
-           // SAFETY: `val` was just checked and is within the valid range
+           // SAFETY: `val` was just checked and is within [0, isize::MAX]
            Some(unsafe { transmute::<usize, Self>(val) })
        } else {
            None
@@ -55,7 +55,7 @@ impl Cap {
     // ── Methods ─────────────────────────────────────────────────────────────
     #[inline]
     pub(super) fn as_inner(&self) -> usize {
-        // SAFETY: `self.0` between [0, isize::MAX] .
+        // SAFETY: `self.0` is between [0, isize::MAX] .
         unsafe { transmute::<&Self, usize>(self) }
     }
 }
