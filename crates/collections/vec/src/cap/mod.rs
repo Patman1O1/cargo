@@ -26,18 +26,18 @@ mod tests;
 // ── `struct Cap` ────────────────────────────────────────────────────────────
 #[derive(Clone, Copy, Eq)]
 #[repr(transparent)]
-pub(super) struct Cap(usize);
+pub(crate) struct Cap(usize);
 
 // ── `Cap` Implementations ───────────────────────────────────────────────────
 impl Cap {
     // ── Constants ───────────────────────────────────────────────────────────
-    pub(super) const ZERO: usize = 0;
+    pub(crate) const ZERO: usize = 0;
 
-    pub(super) const MAX: usize = isize::MAX as usize;
+    pub(crate) const MAX: usize = isize::MAX as usize;
 
     // ── Functions ───────────────────────────────────────────────────────────
     #[inline]
-    pub(super) fn new(val: usize) -> Option<Self> {
+    pub(crate) fn new(val: usize) -> Option<Self> {
        if val <= Self::MAX {
            // SAFETY: `val` was just checked and is within [0, isize::MAX]
            Some(unsafe { transmute::<usize, Self>(val) })
@@ -47,14 +47,14 @@ impl Cap {
     }
 
     #[inline]
-    pub(super) unsafe fn new_unchecked(val: usize) -> Self {
+    pub(crate) unsafe fn new_unchecked(val: usize) -> Self {
         // SAFETY: Caller promised `val` is within [0, isize::max]
         unsafe { transmute::<usize, Self>(val) }
     }
 
     // ── Methods ─────────────────────────────────────────────────────────────
     #[inline]
-    pub(super) fn as_inner(&self) -> usize {
+    pub(crate) fn as_inner(&self) -> usize {
         // SAFETY: `self.0` is between [0, isize::MAX] .
         unsafe { transmute::<&Self, usize>(self) }
     }
