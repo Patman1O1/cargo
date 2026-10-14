@@ -37,24 +37,25 @@ impl Cap {
 
     // ── Functions ───────────────────────────────────────────────────────────
     #[inline]
-    pub(crate) fn new(val: usize) -> Option<Self> {
-       if val <= Self::MAX {
-           // SAFETY: `val` was just checked and is within [0, isize::MAX]
-           Some(unsafe { transmute::<usize, Self>(val) })
-       } else {
-           None
-       }
+    pub(crate) const fn new(val: usize) -> Option<Self> {
+        #[allow(non_contiguous_range_endpoints)]
+        if val <= Self::MAX {
+            // SAFETY: `val` was just checked and is within [0, isize::MAX]
+            Some(unsafe { transmute::<usize, Self>(val) })
+        } else {
+            None
+        }
     }
 
     #[inline]
-    pub(crate) unsafe fn new_unchecked(val: usize) -> Self {
+    pub(crate) const unsafe fn new_unchecked(val: usize) -> Self {
         // SAFETY: Caller promised `val` is within [0, isize::max]
         unsafe { transmute::<usize, Self>(val) }
     }
 
     // ── Methods ─────────────────────────────────────────────────────────────
     #[inline]
-    pub(crate) fn as_inner(&self) -> usize {
+    pub(crate) const fn as_inner(&self) -> usize {
         // SAFETY: `self.0` is between [0, isize::MAX] .
         unsafe { transmute::<&Self, usize>(self) }
     }
