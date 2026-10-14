@@ -6,7 +6,15 @@ use core::{
         PartialEq
     },
     default::Default,
-    fmt::Debug,
+    fmt::{
+        self,
+        Debug
+    }
+    hash::{
+        Hash,
+        Hasher
+    },
+    marker::Copy,
     mem::transmute,
     option::Option,
 };
@@ -16,7 +24,7 @@ use core::{
 mod tests;
 
 // ── `struct Cap` ────────────────────────────────────────────────────────────
-#[derive(Debug)]
+#[derive(Clone, Copy, Eq)]
 pub(super) struct Cap(usize);
 
 // ── `Cap` Implementations ───────────────────────────────────────────────────
@@ -46,7 +54,7 @@ impl Cap {
     // ── Methods ─────────────────────────────────────────────────────────────
     #[inline]
     pub(super) fn as_inner(&self) -> usize {
-        // SAFETY: `self.0` is guarenteed to be in valid state.
+        // SAFETY: `self.0` between [0, isize::MAX] .
         unsafe { transmute::<&Self, usize>(self) }
     }
 }
@@ -66,9 +74,6 @@ impl PartialEq for Cap {
     fn eq(&self, rhs: &Cap) -> bool { self.as_inner() == rhs.as_inner() }
 }
 
-// ── `Eq for Cap` Implementation ─────────────────────────────────────────────
-impl Eq for Cap {}
-
 // ── `PartialOrd for Cap` Implementation ─────────────────────────────────────
 impl PartialOrd for Cap {
     #[inline]
@@ -82,5 +87,17 @@ impl Ord for Cap {
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         self.as_inner().cmp(&other.as_inner())
+    }
+}
+
+impl Hash for Cap {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Hash::hash(&self.as_inner(), state);
+    }
+}
+
+impl Debug for Cap {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        <usize as Debug>::fmt(&self.as_inner(), f)
     }
 }
