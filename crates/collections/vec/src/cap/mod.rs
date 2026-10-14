@@ -90,12 +90,14 @@ impl Ord for Cap {
     }
 }
 
+// ── `Hash for Cap` Implementation ───────────────────────────────────────────
 impl Hash for Cap {
     fn hash<H: Hasher>(&self, state: &mut H) {
         Hash::hash(&self.as_inner(), state);
     }
 }
 
+// ── `Debug for Cap` Implementation ──────────────────────────────────────────
 impl Debug for Cap {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         <usize as Debug>::fmt(&self.as_inner(), f)
