@@ -25,6 +25,7 @@ mod tests;
 
 // ── `struct Cap` ────────────────────────────────────────────────────────────
 #[derive(Clone, Copy, Eq)]
+#[repr(transparent)]
 pub(super) struct Cap(usize);
 
 // ── `Cap` Implementations ───────────────────────────────────────────────────
