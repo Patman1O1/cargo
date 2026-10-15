@@ -38,7 +38,6 @@ impl Cap {
     // ── Functions ───────────────────────────────────────────────────────────
     #[inline]
     pub(crate) const fn new(val: usize) -> Option<Self> {
-        #[allow(non_contiguous_range_endpoints)]
         if val <= Self::MAX {
             // SAFETY: `val` was just checked and is within [0, isize::MAX]
             Some(unsafe { transmute::<usize, Self>(val) })
