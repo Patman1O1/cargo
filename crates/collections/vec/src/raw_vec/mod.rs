@@ -24,7 +24,8 @@ use allocator_api2::{
 use crate::alloc_init::AllocInit;
 
 // ── Modules ─────────────────────────────────────────────────────────────────
-
+#[cfg(test)]
+mod tests;
 
 // ── `struct RawVec` Definition ──────────────────────────────────────────────
 pub(crate) struct RawVec<A: Allocator = Global> {
