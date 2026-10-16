@@ -99,8 +99,6 @@ impl<A: Allocator> RawVec<A> {
         })
     }
 
-    pub(crate) fn try_grow
-
     // ── Methods ─────────────────────────────────────────────────────────────
     #[inline]
     pub(crate) const fn allocator(&self) -> &A { &self.alloc }
