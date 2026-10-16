@@ -16,16 +16,12 @@ use allocator_api2::{
     },
     collections::{
         TryReserveError,
-        TryReserveErrorKind,
         TryReserveErrorKind::AllocError,
         TryReserveErrorKind::CapacityOverflow
     }
 };
 
-use crate::{
-    alloc_init::AllocInit,
-    cap::Cap
-};
+use crate::alloc_init::AllocInit;
 
 // ── Modules ─────────────────────────────────────────────────────────────────
 
@@ -83,7 +79,6 @@ impl<A: Allocator> RawVec<A> {
 
         let result = match init {
             AllocInit::Uninitialized => alloc.allocate(layout),
-            #[cfg(not(no_global_oom_handling))]
             AllocInit::Zeroed => alloc.allocate_zeroed(layout)
         };
 
