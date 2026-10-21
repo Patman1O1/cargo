@@ -1,0 +1,15 @@
+[workspace]
+resolver = "3"
+members = [
+    "vec"
+]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+description = ""
+license = "MIT"
+authors = ["Patrick Thomas"]
+
+[workspace.dependencies]
+allocator-api2 = "0.4"
