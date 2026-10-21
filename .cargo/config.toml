@@ -1,0 +1,2 @@
+[registries]
+crates = { index = "sparse+https://Patman1O1.github.io/crates/" }
