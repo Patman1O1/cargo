@@ -3,9 +3,13 @@ use core::{
     alloc::{
         Layout
     },
+    cmp,
     hint,
     num::NonZero,
-    ptr::NonNull
+    ptr::{
+        self,
+        NonNull
+    }
 };
 
 use allocator_api2::{
@@ -135,6 +139,9 @@ impl<A: Allocator> RawVec<A> {
         }
 
         self.cap = len.checked_add(additional).ok_or(CapacityOverflow)?;
+
+        // SAFETY: `self.cap >= len + additional`. All other preconditions
+        // passed to the caller.
         self.ptr = unsafe { self.grow(self.cap, elem_layout) }?;
 
         Ok(())
@@ -157,6 +164,57 @@ impl<A: Allocator> RawVec<A> {
             CapacityOverflow
         )?;
 
+        self.cap = cmp::max(
+            min_non_zero_cap(elem_layout.size()),
+            cmp::max(self.cap << 1, required_cap)
+        );
+        self.ptr = unsafe { self.grow(self.cap, elem_layout)? };
+
+        Ok(())
+    }
+
+    unsafe fn shrink_unchecked(
+        &mut self,
+        new_cap: usize,
+        elem_layout: Layout
+    ) -> Result<(), TryReserveError> {
+        let curr_layout = self.layout(elem_layout).ok_or(CapacityOverflow)?;
+        
+        if new_cap == 0 {
+            unsafe { self.alloc.deallocate(self.ptr, curr_layout) };
+
+            self.ptr = unsafe {
+                NonNull::new_unchecked(
+                    ptr::without_provenance_mut(elem_layout.align())
+                )
+            };
+            self.cap = 0;
+        } else {
+            let new_size = unsafe {
+                new_cap.unchecked_mul(elem_layout.size())
+            };
+            let new_layout = array_layout(new_size, elem_layout)?;
+            let curr_layout = self.layout(
+                elem_layout
+            ).ok_or(
+                CapacityOverflow
+            )?;
+
+            self.cap = new_cap;
+            self.ptr = unsafe {
+                self.alloc.shrink(
+                    self.ptr,
+                    curr_layout,
+                    new_layout
+                ).map_err(
+                    |_| AllocError {
+                        layout: new_layout,
+                        non_exhaustive: ()
+                    }
+                )?.cast()
+            };
+        }
+        
         Ok(())
     }
 
@@ -206,11 +264,23 @@ impl<A: Allocator> RawVec<A> {
 }
 
 #[inline]
+const fn min_non_zero_cap(elem_size: usize) -> usize {
+    if elem_size == 1 {
+        8
+    } else if elem_size <= 1024 {
+        4
+    } else {
+        1
+    }
+}
+
+#[inline]
 const fn array_layout(
-    cap: usize,
+    len: usize,
     elem_layout: Layout
 ) -> Result<Layout, TryReserveErrorKind> {
-    let Some(size) = cap.checked_mul(elem_layout.size()) else {
+    
+    let Some(size) = len.checked_mul(elem_layout.size()) else {
         return Err(CapacityOverflow);
     };
 
@@ -219,3 +289,4 @@ const fn array_layout(
         Err(_) => Err(CapacityOverflow)
     }
 }
+
