@@ -1,6 +1,7 @@
 // ── Aliases ─────────────────────────────────────────────────────────────────
 use core::{
     alloc::{
+        self,
         Layout
     },
     cmp,
@@ -11,7 +12,7 @@ use core::{
         NonNull
     }
 };
-
+use std::alloc::handle_alloc_error;
 use allocator_api2::{
     alloc::{
         Allocator,
@@ -28,8 +29,6 @@ use allocator_api2::{
 use crate::alloc_init::AllocInit;
 
 // ── Modules ─────────────────────────────────────────────────────────────────
-mod reference; // temporary
-
 #[cfg(test)]
 mod tests;
 
@@ -40,7 +39,35 @@ pub(crate) struct RawVec<A: Allocator = Global> {
     alloc: A
 }
 
-// ── `RawVec` Implementation ─────────────────────────────────────────────────
+// ── `RawVec<Global>` Implementation ─────────────────────────────────────────
+impl RawVec<Global> {
+    // ── Functions ───────────────────────────────────────────────────────────
+    #[inline]
+    pub(crate) const fn new(elem_layout: Layout) -> Self {
+        Self {
+            ptr: dangling(elem_layout),
+            cap: 0,
+            alloc: Global
+        }
+    }
+
+    #[inline]
+    pub(crate) fn try_with_capacity(
+        capacity: usize,
+        elem_layout: Layout
+    ) -> Result<Self, TryReserveError> {
+        Self::try_allocate_in(
+            capacity,
+            AllocInit::Uninitialized,
+            Global,
+            elem_layout
+        )
+    }
+
+
+}
+
+// ── `RawVec<A>` Implementation ──────────────────────────────────────────────
 impl<A: Allocator> RawVec<A> {
     // ── Constants ───────────────────────────────────────────────────────────
     pub(crate) const MAX_CAP: usize = isize::MAX as usize;
@@ -49,23 +76,20 @@ impl<A: Allocator> RawVec<A> {
     #[inline]
     pub(crate) const fn new_in(
         alloc: A,
-        elem_layout: Layout,
+        elem_layout: Layout
     ) -> Self {
         Self {
-            ptr: NonNull::without_provenance(
-                // SAFETY: `Layout::align()` is always non-zero.
-                unsafe { NonZero::<usize>::new_unchecked(elem_layout.align()) }
-            ),
+            ptr: dangling(elem_layout),
             cap: 0,
             alloc
         }
     }
 
-    pub(crate) fn try_allocate_in(
+    fn try_allocate_in(
         capacity: usize,
         init: AllocInit,
         alloc: A,
-        elem_layout: Layout,
+        elem_layout: Layout
     ) -> Result<Self, TryReserveError> {
         let layout = array_layout(capacity, elem_layout)?;
 
@@ -88,6 +112,49 @@ impl<A: Allocator> RawVec<A> {
     }
 
     // ── Methods ─────────────────────────────────────────────────────────────
+    #[inline]
+    pub(crate) const fn allocator(&self) -> &A { &self.alloc }
+
+    #[inline]
+    pub(crate) const fn capacity(&self, elem_size: usize) -> usize {
+        match elem_size {
+            0 => usize::MAX,
+            _ => self.cap
+        }
+    }
+
+    #[inline]
+    pub(crate) const fn layout(
+        &self,
+        elem_layout: Layout
+    ) -> Option<Layout> {
+        if self.cap == 0 || elem_layout.size() == 0 {
+            hint::cold_path();
+            return None;
+        }
+
+        Some(
+            // SAFETY: `elem_layout`
+            unsafe {
+                Layout::from_size_align_unchecked(
+                    self.cap.unchecked_mul(elem_layout.size()),
+                    elem_layout.align()
+                )
+            }
+        )
+    }
+
+    #[inline]
+    pub(crate) const fn non_null<T>(&self) -> NonNull<T> { self.ptr.cast() }
+
+    #[inline]
+    pub(crate) const fn ptr<T>(&self) -> *const T { self.ptr.as_ptr().cast() }
+
+    #[inline]
+    pub(crate) const fn ptr_mut<T>(&self) -> *mut T {
+        self.ptr.as_ptr().cast()
+    }
+
     #[inline]
     const fn needs_to_grow(
         &self,
@@ -173,6 +240,8 @@ impl<A: Allocator> RawVec<A> {
         Ok(())
     }
 
+    /// # Safety
+    /// - `new_cap <= self.capacity()`
     unsafe fn shrink_unchecked(
         &mut self,
         new_cap: usize,
@@ -183,11 +252,11 @@ impl<A: Allocator> RawVec<A> {
         if new_cap == 0 {
             unsafe { self.alloc.deallocate(self.ptr, curr_layout) };
 
+            // SAFETY: `elem_layout.align()` always returns a nonzero value.
             self.ptr = unsafe {
-                NonNull::new_unchecked(
-                    ptr::without_provenance_mut(elem_layout.align())
-                )
+                dangling(elem_layout)
             };
+
             self.cap = 0;
         } else {
             let new_size = unsafe {
@@ -218,51 +287,16 @@ impl<A: Allocator> RawVec<A> {
         Ok(())
     }
 
-    #[inline]
-    pub(crate) const fn allocator(&self) -> &A { &self.alloc }
-
-    #[inline]
-    pub(crate) const fn capacity(&self, elem_size: usize) -> usize {
-        match elem_size {
-            0 => usize::MAX,
-            _ => self.cap
-        }
-    }
-
-    #[inline]
-    pub(crate) const fn layout(
-        &self,
-        elem_layout: Layout
-    ) -> Option<Layout> {
-        if self.cap == 0 || elem_layout.size() == 0 {
-            hint::cold_path();
-            return None;
-        }
-
-        Some(
-            // SAFETY: `elem_layout` 
+    unsafe fn deallocate(&mut self, elem_layout: Layout) {
+        if let Some(layout) = self.layout(elem_layout) {
             unsafe {
-                Layout::from_size_align_unchecked(
-                    self.cap.unchecked_mul(elem_layout.size()),
-                    elem_layout.align()
-                )
+                self.alloc.deallocate(self.ptr, layout);
             }
-        )
+        }
     }
-
-    #[inline]
-    pub(crate) const fn raw_non_null(&self) -> NonNull<u8> { self.ptr }
-
-    #[inline]
-    pub(crate) const fn raw_ptr(&self) -> *mut u8 { self.ptr.as_ptr() }
-
-    #[inline]
-    pub(crate) const fn non_null<T>(&self) -> NonNull<T> { self.ptr.cast() }
-
-    #[inline]
-    pub(crate) const fn ptr<T>(&self) -> *mut T { self.ptr.as_ptr().cast() }
 }
 
+// ── Non-member Functions ────────────────────────────────────────────────────
 #[inline]
 const fn min_non_zero_cap(elem_size: usize) -> usize {
     if elem_size == 1 {
@@ -276,11 +310,10 @@ const fn min_non_zero_cap(elem_size: usize) -> usize {
 
 #[inline]
 const fn array_layout(
-    len: usize,
+    cap: usize,
     elem_layout: Layout
 ) -> Result<Layout, TryReserveErrorKind> {
-    
-    let Some(size) = len.checked_mul(elem_layout.size()) else {
+    let Some(size) = cap.checked_mul(elem_layout.size()) else {
         return Err(CapacityOverflow);
     };
 
@@ -290,3 +323,28 @@ const fn array_layout(
     }
 }
 
+/// # Safety
+/// - `align` must be a nonzero power of two.
+#[inline]
+const fn dangling(elem_layout: Layout) -> NonNull<u8> {
+    // SAFETY: `elem_layout.align()` is a power of two.
+    unsafe {
+        NonNull::new_unchecked(
+            ptr::without_provenance_mut(elem_layout.align())
+        )
+    }
+}
+
+
+#[cfg(not(no_global_oom_handling))]
+#[inline(never)]
+const fn handle_cap_overflow_error() -> ! { panic!("capacity overflow") }
+
+#[cfg(not(no_global_oom_handling))]
+#[cold]
+fn handle_error(err: TryReserveError) -> ! {
+    match err.kind() {
+        CapacityOverflow => handle_cap_overflow_error(),
+        AllocError { layout, .. } => handle_alloc_error(layout)
+    }
+}
