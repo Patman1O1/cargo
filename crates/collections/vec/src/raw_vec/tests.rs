@@ -40,4 +40,15 @@ mod min_non_zero_cap {
 	fn elem_size_usize_max() { assert_eq!(min_non_zero_cap(usize::MAX), 1); }
 }
 
+// ── `RawVec` Function Tests ─────────────────────────────────────────────────
+mod new {
+	use super::*;
 
+	#[test]
+	fn test() {
+		let vec = RawVec::new(array_layout::<i32>(4));
+
+		assert_ne!(vec.ptr::<i32>(), ptr::null());
+		assert_eq!(vec.cap, 0);
+	}
+}
