@@ -1,12 +1,7 @@
 // ── Aliases ─────────────────────────────────────────────────────────────────
 use core::{
 	alloc::Layout,
-	ptr,
-	mem
-};
-
-use allocator_api2::{
-	alloc::Global
+	ptr
 };
 
 use super::*;
