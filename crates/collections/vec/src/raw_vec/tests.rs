@@ -14,8 +14,10 @@ fn array_layout<T>(n: usize) -> Layout {
 
 // ── Non-member Function Tests ───────────────────────────────────────────────
 mod min_non_zero_cap {
+	// ── Aliases ─────────────────────────────────────────────────────────────
 	use super::*;
 
+	// ── Tests ───────────────────────────────────────────────────────────────
 	#[test]
 	fn elem_size_0() { assert_eq!(min_non_zero_cap(0), 4); }
 
@@ -37,8 +39,10 @@ mod min_non_zero_cap {
 
 // ── `RawVec` Function Tests ─────────────────────────────────────────────────
 mod new {
+	// ── Aliases ─────────────────────────────────────────────────────────────
 	use super::*;
 
+	// ── Tests ───────────────────────────────────────────────────────────────
 	#[test]
 	fn test() {
 		let vec = RawVec::new(array_layout::<i32>(4));
