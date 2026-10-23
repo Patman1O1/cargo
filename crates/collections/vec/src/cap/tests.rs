@@ -125,9 +125,7 @@ mod methods {
 #[test]
 fn default() {
 	// SAFETY: `0` <= `Cap::MAX` (aka `isize::MAX as usize`).
-	unsafe {
-		assert_eq!(Cap::default(), Cap::new_unchecked(0));
-	}
+	unsafe { assert_eq!(Cap::default(), Cap::new_unchecked(0)); }
 }
 
 // ── `PartialEq` Trait Tests ─────────────────────────────────────────────────
@@ -148,7 +146,28 @@ mod eq {
 	use super::*;
 
 	// ── Tests ───────────────────────────────────────────────────────────────
+	#[test]
+	fn true_case() {
+		// SAFETY: `1` <= `Cap::MAX` (aka `isize::MAX as usize`).
+		unsafe {
+			assert_eq!(
+				Cap::new_unchecked(1),
+				Cap::new_unchecked(1)
+			);
+		}
+	}
 
+	#[test]
+	fn false_case() {
+		// SAFETY: `1` <= `Cap::MAX` (aka `isize::MAX as usize`) and
+		// `0` <= `Cap::MAX` (aka `isize::MAX as usize`).
+		unsafe {
+			assert_eq!(
+				Cap::new_unchecked(1),
+				Cap::new_unchecked(0)
+			);
+		}
+	}
 }
 
 // ── `PartialOrd` Trait Tests ────────────────────────────────────────────────
