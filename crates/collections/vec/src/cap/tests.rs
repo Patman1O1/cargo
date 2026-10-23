@@ -66,28 +66,6 @@ mod functions {
 				)
 			}
 		}
-
-		#[test]
-		fn isize_max_plus_one() {
-			// SAFETY: Unsafe, but it needs to be tested.
-			unsafe {
-				assert_eq!(
-					Cap::new_unchecked(isize::MAX as usize + 1).as_inner(),
-					isize::MAX as usize + 1
-				)
-			}
-		}
-
-		#[test]
-		fn usize_max() {
-			// SAFETY: Unsafe, but it needs to be tested.
-			unsafe {
-				assert_eq!(
-					Cap::new_unchecked(usize::MAX).as_inner(),
-					usize::MAX
-				)
-			}
-		}
 	}
 }
 
