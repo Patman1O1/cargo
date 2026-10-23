@@ -150,9 +150,8 @@ mod eq {
 	fn true_case() {
 		// SAFETY: `1` <= `Cap::MAX` (aka `isize::MAX as usize`).
 		unsafe {
-			assert_eq!(
-				Cap::new_unchecked(1),
-				Cap::new_unchecked(1)
+			assert!(
+				Cap::new_unchecked(1).eq(&Cap::new_unchecked(1))
 			);
 		}
 	}
@@ -162,9 +161,8 @@ mod eq {
 		// SAFETY: `1` <= `Cap::MAX` (aka `isize::MAX as usize`) and
 		// `0` <= `Cap::MAX` (aka `isize::MAX as usize`).
 		unsafe {
-			assert_eq!(
-				Cap::new_unchecked(1),
-				Cap::new_unchecked(0)
+			assert!(
+				!Cap::new_unchecked(1).eq(&Cap::new_unchecked(0))
 			);
 		}
 	}
