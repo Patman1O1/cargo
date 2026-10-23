@@ -14,8 +14,9 @@ use core::{
         Hash,
         Hasher
     },
+    hint,
     marker::Copy,
-    mem::transmute,
+    mem,
     option::Option,
 };
 
@@ -40,7 +41,7 @@ impl Cap {
     pub(crate) const fn new(val: usize) -> Option<Self> {
         if val <= Self::MAX {
             // SAFETY: `val` was just checked and is within [0, isize::MAX]
-            Some(unsafe { transmute::<usize, Self>(val) })
+            Some(unsafe { mem::transmute::<usize, Self>(val) })
         } else {
             None
         }
@@ -49,14 +50,17 @@ impl Cap {
     #[inline]
     pub(crate) const unsafe fn new_unchecked(val: usize) -> Self {
         // SAFETY: Caller promised `val` is within [0, isize::max]
-        unsafe { transmute::<usize, Self>(val) }
+        unsafe {
+            hint::assert_unchecked(val <= Self::MAX);
+            mem::transmute::<usize, Self>(val)
+        }
     }
 
     // ── Methods ─────────────────────────────────────────────────────────────
     #[inline]
     pub(crate) const fn as_inner(&self) -> usize {
         // SAFETY: `self.0` is between [0, isize::MAX] .
-        unsafe { transmute::<&Self, usize>(self) }
+        unsafe { mem::transmute::<&Self, usize>(self) }
     }
 }
 
