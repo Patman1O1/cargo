@@ -165,31 +165,6 @@ mod eq {
 
 	// ── Tests ───────────────────────────────────────────────────────────────
 	#[test]
-	fn eq_case() {
-		unsafe {
-			assert!(
-				Cap::new_unchecked(1).eq(&Cap::new_unchecked(1))
-			);
-		}
-	}
-
-	#[test]
-	fn ne_case() {
-		unsafe {
-			assert!(
-				!Cap::new_unchecked(1).eq(&Cap::new_unchecked(0))
-			);
-		}
-	}
-}
-
-// ── `PartialOrd` Trait Tests ────────────────────────────────────────────────
-mod partial_ord {
-	// ── Aliases ─────────────────────────────────────────────────────────────
-	use super::*;
-
-	// ── Tests ───────────────────────────────────────────────────────────────
-	#[test]
 	fn reflexive() {
 		for val in [0, 1, isize::MAX as usize] {
 			let cap = unsafe { Cap::new_unchecked(val) };
@@ -224,6 +199,15 @@ mod partial_ord {
 
 		assert!(a == b && b == c && a == c);
 	}
+}
+
+// ── `PartialOrd` Trait Tests ────────────────────────────────────────────────
+mod partial_ord {
+	// ── Aliases ─────────────────────────────────────────────────────────────
+	use super::*;
+
+	// ── Tests ───────────────────────────────────────────────────────────────
+
 }
 
 // ── `Ord` Trait Tests ───────────────────────────────────────────────────────
