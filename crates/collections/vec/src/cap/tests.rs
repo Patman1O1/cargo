@@ -1,6 +1,13 @@
 // ── Aliases ─────────────────────────────────────────────────────────────────
 use super::*;
 
+#[track_caller]
+const fn new_cap(val: usize) -> Cap {
+	Cap::new(val).expect(
+		"\"val\" must be <= Cap::MAX (aka isize::MAX as usize)"
+	)
+}
+
 // ── `Cap` Function Tests ────────────────────────────────────────────────────
 mod functions {
 	// ── Aliases ─────────────────────────────────────────────────────────────
@@ -86,47 +93,24 @@ mod methods {
 
 		// ── Tests ───────────────────────────────────────────────────────────
 		#[test]
-		fn zero() {
-			// SAFETY: `0` <= `Cap::MAX` (aka `isize::max as usize`)
-			unsafe {
-				assert_eq!(
-					Cap::new_unchecked(0).as_inner(),
-					0
-				);
-			}
-		}
+		fn zero() { assert_eq!(new_cap(0).as_inner(), 0); }
 
 		#[test]
-		fn one() {
-			// SAFETY: `1` <= `Cap::MAX` (aka `isize::max as usize`)
-			unsafe {
-				assert_eq!(
-					Cap::new(1).unwrap_unchecked().as_inner(),
-					1
-				)
-			}
-		}
+		fn one() { assert_eq!(new_cap(1).as_inner(), 1); }
 
 		#[test]
 		fn isize_max() {
-			// SAFETY: `isize::MAX as usize` <= `Cap::MAX`
-			// (aka `isize::max as usize`).
-			unsafe {
-				assert_eq!(
-					Cap::new_unchecked(isize::MAX as usize).as_inner(),
-					isize::MAX as usize
-				)
-			}
+			assert_eq!(
+				new_cap(isize::MAX as usize).as_inner(),
+				isize::MAX as usize
+			);
 		}
 	}
 }
 
 // ── `Default` Trait Tests ───────────────────────────────────────────────────
 #[test]
-fn default() {
-	// SAFETY: `0` <= `Cap::MAX` (aka `isize::MAX as usize`).
-	assert_eq!(Cap::default(), unsafe { Cap::new_unchecked(0)} );
-}
+fn default() { assert_eq!(Cap::default(), new_cap(0) ); }
 
 // ── `PartialEq` Trait Tests ─────────────────────────────────────────────────
 mod partial_eq {
@@ -136,25 +120,15 @@ mod partial_eq {
 	// ── Tests ───────────────────────────────────────────────────────────────
 	#[test]
 	fn true_case() {
-		unsafe {
-			assert_eq!(Cap::new_unchecked(0), Cap::new_unchecked(0));
-			assert_eq!(Cap::new_unchecked(1), Cap::new_unchecked(1));
-			assert_eq!(
-				Cap::new_unchecked(isize::MAX as usize),
-				Cap::new_unchecked(isize::MAX as usize)
-			);
-		}
+		assert_eq!(new_cap(0), new_cap(0));
+		assert_eq!(new_cap(1), new_cap(1));
+		assert_eq!(new_cap(isize::MAX as usize), new_cap(isize::MAX as usize));
 	}
 
 	#[test]
 	fn false_case() {
-		unsafe {
-			assert_ne!(Cap::new_unchecked(0), Cap::new_unchecked(1));
-			assert_ne!(
-				Cap::new_unchecked(1),
-				Cap::new_unchecked(isize::MAX as usize)
-			);
-		}
+		assert_ne!(new_cap(0), new_cap(1));
+		assert_ne!(new_cap(1), new_cap(isize::MAX as usize));
 	}
 }
 
@@ -167,36 +141,20 @@ mod eq {
 	#[test]
 	fn reflexive() {
 		for val in [0, 1, isize::MAX as usize] {
-			let cap = unsafe { Cap::new_unchecked(val) };
+			let cap = new_cap(val);
 			assert_eq!(cap, cap);
 		}
 	}
 
 	#[test]
 	fn symmetric() {
-		unsafe {
-			assert_eq!(
-				Cap::new_unchecked(1) == Cap::new_unchecked(1),
-				Cap::new_unchecked(1) == Cap::new_unchecked(1)
-			);
-
-			assert_eq!(
-				Cap::new_unchecked(0) == Cap::new_unchecked(1),
-				Cap::new_unchecked(1) == Cap::new_unchecked(0)
-			);
-		}
+		assert_eq!(new_cap(1) == new_cap(1), new_cap(1) == new_cap(1));
+		assert_eq!(new_cap(0) == new_cap(1), new_cap(1) == new_cap(0));
 	}
 
 	#[test]
 	fn transitive() {
-		let (a, b, c) = unsafe {
-			(
-				Cap::new_unchecked(1),
-				Cap::new_unchecked(1),
-				Cap::new_unchecked(1)
-			)
-		};
-
+		let (a, b, c) = (new_cap(1), new_cap(1), new_cap(1));
 		assert!(a == b && b == c && a == c);
 	}
 }
@@ -207,7 +165,32 @@ mod partial_ord {
 	use super::*;
 
 	// ── Tests ───────────────────────────────────────────────────────────────
+	#[test]
+	fn less() {
+		assert_eq!(new_cap(0).partial_cmp(&new_cap(1)), Some(Ordering::Less));
+		assert!(new_cap(0) < new_cap(1));
+		assert!(new_cap(1) <= new_cap(1));
+	}
 
+	#[test]
+	fn equal() {
+		assert_eq!(new_cap(1).partial_cmp(&new_cap(1)), Some(Ordering::Equal));
+	}
+
+	#[test]
+	fn greater() {
+		assert_eq!(
+			new_cap(
+				isize::MAX as usize
+			).partial_cmp(
+				&new_cap(1)
+			),
+
+			Some(Ordering::Greater)
+		);
+		assert!(new_cap(isize::MAX as usize) > new_cap(1));
+		assert!(new_cap(isize::MAX as usize) >= new_cap(isize::MAX as usize));
+	}
 }
 
 // ── `Ord` Trait Tests ───────────────────────────────────────────────────────
@@ -216,7 +199,23 @@ mod ord {
 	use super::*;
 
 	// ── Tests ───────────────────────────────────────────────────────────────
+	#[test]
+	fn less() {
+		assert_eq!(new_cap(0).cmp(&new_cap(1)), Ordering::Less);
+	}
 
+	#[test]
+	fn equal() {
+		assert_eq!(new_cap(1).cmp(&new_cap(1)), Ordering::Equal);
+	}
+
+	#[test]
+	fn greater() {
+		assert_eq!(
+			new_cap(isize::MAX as usize).cmp(&new_cap(0)),
+			Ordering::Greater
+		);
+	}
 }
 
 // ── `Hash` Trait Tests ──────────────────────────────────────────────────────
