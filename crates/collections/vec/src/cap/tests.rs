@@ -223,14 +223,47 @@ mod hash {
 	// ── Aliases ─────────────────────────────────────────────────────────────
 	use super::*;
 
-	// ── Tests ───────────────────────────────────────────────────────────────
+	use core::hash::Hash;
 
+	use std::hash::DefaultHasher;
+
+	// ── Functions ───────────────────────────────────────────────────────────
+	fn hash_of<T: Hash>(val: &T) -> u64 {
+		let mut hasher = DefaultHasher::new();
+		val.hash(&mut hasher);
+		hasher.finish()
+	}
+
+	// ── Tests ───────────────────────────────────────────────────────────────
+	#[test]
+	fn cap_hashes_match() {
+		for val in [0, 1, isize::MAX as usize] {
+			assert_eq!(hash_of(&new_cap(val)), hash_of(&new_cap(val)));
+		}
+	}
+
+	#[test]
+	fn cap_hash_matches_usize_hash() {
+		for val in [0, 1, isize::MAX as usize] {
+			assert_eq!(hash_of(&new_cap(val)), hash_of(&val));
+		}
+	}
 }
 
 // ── `Display` Trait Tests ───────────────────────────────────────────────────
 mod display {
 	// ── Aliases ─────────────────────────────────────────────────────────────
 	use super::*;
+
+	use core::{
+		hash::Hash
+	};
+
+	use std::{
+		hash::DefaultHasher
+	};
+
+	// ── Aliases ─────────────────────────────────────────────────────────────
 
 	// ── Tests ───────────────────────────────────────────────────────────────
 
